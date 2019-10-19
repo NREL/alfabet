@@ -23,5 +23,14 @@ The basic interface works as follows, where `predict` expects a list of SMILES s
 The model breaks all single, non-cyclic bonds in the input molecules and calculates their bond dissociation energies. Typical prediction errors are less than 1 kcal/mol. 
 The model is based on Keras and Tensorflow (1.x), and makes heavy use of the [neural fingerprint](github.com/NREL/nfp) library.
 
-For additional details, see the (upcoming) publication
-St. John, P.C., Guan, Y., Kim, Y., Kim., S., and Paton, R.S., Prediction of homolytic bond dissociation enthalpies for organic molecules at near chemical accuracy with sub-second computational cost 
+For additional details, see the (upcoming) publication:
+- St. John, P.C., Guan, Y., Kim, Y., Kim., S., and Paton, R.S., Prediction of homolytic bond dissociation enthalpies for organic molecules at near chemical accuracy with sub-second computational cost 
+
+## Installation
+Installation with `conda` is recommended, as [`rdkit`](https://github.com/rdkit/rdkit) can otherwise be difficult to install
+
+```bash
+$ conda create -n alfabet -c conda-forge python=3.7 rdkit
+$ source activate alfabet
+$ pip install alfabet
+```
