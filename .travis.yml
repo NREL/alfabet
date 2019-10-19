@@ -1,0 +1,33 @@
+language: minimal
+
+env:
+  - PYTHON_VERSION="3.6"
+
+before_install:
+  - wget https://repo.continuum.io/miniconda/Miniconda3-latest-Linux-x86_64.sh -O miniconda.sh;
+  - bash miniconda.sh -b -p $HOME/miniconda
+  - export PATH="$HOME/miniconda/bin:$PATH"
+  - conda config --set always_yes yes --set changeps1 no
+  - conda update -q conda
+
+
+install:
+  - conda create -q -n test -c conda-forge python=$PYTHON_VERSION rdkit pytest 
+  - source activate test
+
+  # Quick test to make sure rdkit is working
+  - python -c "import rdkit.Chem"
+
+  # Install non-rdkit requirements via pip
+  - pip install -e .
+
+script:
+- pytest tests/
+
+deploy:
+  provider: pypi
+  user: pstjohn
+  password:
+    secure: "3eZ7mduGT471Zqbyy8dGEvjQ50Szw16qLAN3OADgoorZhASCbsYIukUrs7zQl8isv9Osq5rTQWMprEBd6BOnvt6EFUzpHVyBTJlfY3VdXp6V5hZ67/6Bzf6j37vU9Sg+1jElZpNTpiBBNV9NfjSooq+FUPzlXmcYClEgEVEZ+2jbeZKHu9su5dW1sx0Sv9XJWKDs791LdXFQUlazrk/Z7HGpzSTPLS/VE/ApCFQ1lfF/tkmYZ9KWh9FypQhQKD46B9tCcBc/7xXJRZ6RLkT57EEdYxWV/8wfahb4uaLJRhHkRKH6+/PrNjygBbJciUFpeNFfcp82yVqtv8sqXT9mvWGfUjGoIVqDjSlPWN5Ah9kOVwdzrfp8ljVDz+FHqyiHz8CoiJtbfJ2APNA7tDRfsO6vDmt5x9yhI/sWYXs5aj8Z70GKUUTG+7XoirKcDrwlvQVEh+XMeU+UleYIx7LU3ItPWR0ljk9A1bc2+3y4siW+4x3MzQ4ZIiYwYVJkEV+/YGjXqrKVvBsJ5QbZ64hsUWUoEQeqhXmpVUkfdP82Cb05WZ0QX8VpVlYNSOchXCbGpd/o9c7kPUjJJpRu3xLCVYAv60zkTiCmpIOIh1UlLMn2PidDfWiGkEX3mNM3tEIiI0RDGSZ7tB8Jcex0FYIP5hOFXtN8+eeI8itbpSMHXLA="
+  on:
+    tags: true
