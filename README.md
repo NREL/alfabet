@@ -1,4 +1,6 @@
 ![ALFABET logo](/docs/logo.svg)
+[![PyPI version](https://badge.fury.io/py/alfabet.svg)](https://badge.fury.io/py/alfabet)
+
 
 # A machine-Learning derived, Fast, Accurate Bond dissociation Enthalpy Tool (ALFABET)
 
