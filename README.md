@@ -1,4 +1,5 @@
-![ALFABET logo](https://raw.githubusercontent.com/NREL/alfabet/master/docs/logo.svg)
+![ALFABET logo](/docs/logo.svg)
+
 # A machine-Learning derived, Fast, Accurate Bond dissociation Enthalpy Tool (ALFABET)
 
 This library contains the trained graph neural network model for the prediction of homolytic bond dissociation energies (BDEs) of organic molecules with C, H, N, and O atoms. This package offers a command-line interface to the web-based model predictions at [ml.nrel.gov](ml.nrel.gov).
