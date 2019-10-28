@@ -19,7 +19,7 @@ install:
   - python -c "import rdkit.Chem"
 
   # Install non-rdkit requirements via pip
-  - pip install -q --no-progress-bar -e .
+  - pip install --progress-bar off -e .
 
 script:
 - pytest tests/
