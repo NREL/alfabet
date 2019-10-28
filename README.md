@@ -1,6 +1,7 @@
 ![ALFABET logo](/docs/logo.svg)
 
 [![PyPI version](https://badge.fury.io/py/alfabet.svg)](https://badge.fury.io/py/alfabet)
+[![Build Status](https://travis-ci.com/NREL/alfabet.svg?branch=master)](https://travis-ci.com/NREL/alfabet)
 
 # A machine-Learning derived, Fast, Accurate Bond dissociation Enthalpy Tool (ALFABET)
 
