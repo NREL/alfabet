@@ -13,7 +13,7 @@ with open(path.join(here, 'README.md'), encoding='utf-8') as f:
 
 setup(
     name='alfabet',
-    version='0.0.1',
+    version='0.0.2',
     description='A library to estimate bond dissociation energies (BDEs) of organic molecules',
     include_package_data = True,
     long_description=long_description,
