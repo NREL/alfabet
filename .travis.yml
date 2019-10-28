@@ -1,33 +1,23 @@
 language: minimal
-
 env:
-  - PYTHON_VERSION="3.6"
-
+- PYTHON_VERSION="3.6"
 before_install:
-  - wget https://repo.continuum.io/miniconda/Miniconda3-latest-Linux-x86_64.sh -O miniconda.sh;
-  - bash miniconda.sh -b -p $HOME/miniconda
-  - export PATH="$HOME/miniconda/bin:$PATH"
-  - conda config --set always_yes yes --set changeps1 no
-  - conda update -q conda
-
-
+- wget https://repo.continuum.io/miniconda/Miniconda3-latest-Linux-x86_64.sh -O miniconda.sh;
+- bash miniconda.sh -b -p $HOME/miniconda
+- export PATH="$HOME/miniconda/bin:$PATH"
+- conda config --set always_yes yes --set changeps1 no
+- conda update -q conda
 install:
-  - conda create -q -n test -c conda-forge python=$PYTHON_VERSION rdkit pytest 
-  - source activate test
-
-  # Quick test to make sure rdkit is working
-  - python -c "import rdkit.Chem"
-
-  # Install non-rdkit requirements via pip
-  - pip install --progress-bar off -e .
-
+- conda create -q -n test -c conda-forge python=$PYTHON_VERSION rdkit pytest
+- source activate test
+- python -c "import rdkit.Chem"
+- pip install --progress-bar off -e .
 script:
 - pytest tests/
-
 deploy:
   provider: pypi
-  user: pstjohn
-  password:
-    secure: "3eZ7mduGT471Zqbyy8dGEvjQ50Szw16qLAN3OADgoorZhASCbsYIukUrs7zQl8isv9Osq5rTQWMprEBd6BOnvt6EFUzpHVyBTJlfY3VdXp6V5hZ67/6Bzf6j37vU9Sg+1jElZpNTpiBBNV9NfjSooq+FUPzlXmcYClEgEVEZ+2jbeZKHu9su5dW1sx0Sv9XJWKDs791LdXFQUlazrk/Z7HGpzSTPLS/VE/ApCFQ1lfF/tkmYZ9KWh9FypQhQKD46B9tCcBc/7xXJRZ6RLkT57EEdYxWV/8wfahb4uaLJRhHkRKH6+/PrNjygBbJciUFpeNFfcp82yVqtv8sqXT9mvWGfUjGoIVqDjSlPWN5Ah9kOVwdzrfp8ljVDz+FHqyiHz8CoiJtbfJ2APNA7tDRfsO6vDmt5x9yhI/sWYXs5aj8Z70GKUUTG+7XoirKcDrwlvQVEh+XMeU+UleYIx7LU3ItPWR0ljk9A1bc2+3y4siW+4x3MzQ4ZIiYwYVJkEV+/YGjXqrKVvBsJ5QbZ64hsUWUoEQeqhXmpVUkfdP82Cb05WZ0QX8VpVlYNSOchXCbGpd/o9c7kPUjJJpRu3xLCVYAv60zkTiCmpIOIh1UlLMn2PidDfWiGkEX3mNM3tEIiI0RDGSZ7tB8Jcex0FYIP5hOFXtN8+eeI8itbpSMHXLA="
+  user: __token__
   on:
     tags: true
+  password:
+    secure: rCAq+QG8LnX75pOsGXNr8vr9f4fWP1VO6lAlD4qM86OWERcyMvGGNmmShp1CSCWaIOZuFcX9Ql6dE8g6nt/B8xoSh8y0U172NThP/nLKp+kXOXxE44GMF9VmVzBqupTY8vm1ke1eqqQ63QAmRAsZA3AnClR8yP8KWqul2eG9w+my6FKUp0vwoAADkiOhZSirLB500jY4sWLk5q9iMGG73EssMp4OYpRj6K/bNqN8K5azvqabHuWhPeSm5RLB/WgLaGPh+OrpbUykYgQ6QxNL2qliSv3FIKj3p9zLWbGD/urGvEekPxVi5K/BpmRFG1Seup4tHzIczrR7m/IPJr44PpwlhTnRZVkI46i0jXtuZTfsrtcBXP/Zv+BoMiZclaq6Qd2k64vxPi3TxseFv42pAVWwfBfMUpEliu1BYx+722fyExNRP5tDSJFbRTk5i264kAleV1v1/2AGov/dPfq0fF7NXnkPZt7q/pw5xNIhXJxAMw6kHUjxM0U5vBR5apwmKl78OJ8NeMG1tdSn5sImDZlmQNZOO16Rl4QpyYPsiKgw993osOphk9JXMFoIxorFd0UHDWEehna0qYuIAaTY9KZeIk0DMNYODMI75kmSDCt3BGhrMz3haykyp8X61LZMfzgJT6S771/cGvYJ2BUBQrviVLjrjVkFmqA7TYkfSl8=
