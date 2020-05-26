@@ -2,16 +2,19 @@ import numpy as np
 from alfabet import model
 
 def test_predict():
-    results = model.predict(['CC', 'NCCO', 'CF'], verbose=False)
+    results = model.predict(['CC', 'NCCO', 'CF', 'B'], verbose=False)
 
-    assert not results[results.molecule == 'CF'].is_valid.any()
-    assert results[results.molecule != 'CF'].is_valid.all()
-
-    np.testing.assert_allclose(
-        results[results.molecule == 'CC'].bde_pred,
-        [90.278282, 99.346191], atol=1E-4)
+    assert not results[results.molecule == 'B'].is_valid.any()
+    assert results[results.molecule != 'B'].is_valid.all()
 
     np.testing.assert_allclose(
-        results[results.molecule == 'NCCO'].bde_pred,
-        [89.98849,  82.12242,  98.25096,  99.13476,  92.21609, 92.56299,
-         105.120605], atol=1E-4)
+        results[results.molecule == 'CC'].BDE,
+        [90.7, 99.8], atol=1., rtol=.05)
+
+    np.testing.assert_allclose(
+        results[results.molecule == 'NCCO'].BDE,
+        [90.0, 82.1, 98.2, 99.3, 92.1, 92.5, 105.2], atol=1., rtol=.05)
+
+    np.testing.assert_allclose(
+        results[results.molecule == 'CF'].BDE,
+        [107., 97.5], atol=1., rtol=.05)
