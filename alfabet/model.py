@@ -1,38 +1,27 @@
 import os
-import sys
-import pickle
-import warnings
-
-import numpy as np
+from itertools import chain
+    
+from tqdm import tqdm
 import pandas as pd
-from alfabet.fragment import get_fragments
-from joblib import Parallel, delayed
+import numpy as np
+import tensorflow as tf
+import nfp
 
-with warnings.catch_warnings():
-    # Put these imports inside a catch warnings context to supress a number of
-    # TF 2.0 warnings and numpy version mismatch warnings
-    warnings.filterwarnings("ignore", category=FutureWarning)
-    import tensorflow as tf
-    tf.compat.v1.logging.set_verbosity(tf.compat.v1.logging.ERROR)
-    from keras.models import load_model
-    from alfabet.preprocessor_utils import ConcatGraphSequence
-    from nfp import custom_layers
+from alfabet.fragment import fragment_iterator
+from alfabet.preprocess_inputs import atom_featurizer, bond_featurizer
 
 currdir = os.path.dirname(os.path.abspath(__file__))
 
-with open(os.path.join(currdir, 'model_files/preprocessor.p'), 'rb') as f:
-    from alfabet import preprocessor_utils
-    sys.modules['preprocessor_utils'] = preprocessor_utils
-    preprocessor = pickle.load(f)
+model = tf.keras.models.load_model(
+    os.path.join(currdir, 'model_files/best_model.hdf5'),
+    custom_objects=nfp.custom_objects)
 
-with warnings.catch_warnings():
-    warnings.simplefilter('ignore')
-    # These supress the exploding gradient warnings
 
-    model = load_model(
-        os.path.join(currdir, 'model_files/best_model.hdf5'),
-        custom_objects=custom_layers)
-    model._make_predict_function()
+# Load the preprocessor from the saved json configuration
+preprocessor = nfp.SmilesPreprocessor(atom_features=atom_featurizer,
+                                      bond_features=bond_featurizer)
+preprocessor.from_json(os.path.join(currdir, 'model_files/preprocessor.json'))
+
 
 def check_valid(iinput):
     """ Check the given SMILES to ensure it's present in the model's
@@ -44,39 +33,24 @@ def check_valid(iinput):
     """
 
     missing_bond = np.array(
-        list(set(iinput['bond_indices'][iinput['bond'] == 1])))
-    missing_atom = np.arange(iinput['n_atom'])[iinput['atom'] == 1]
+        list(set(iinput['bond_indices'][np.array(iinput['bond'] == 1)].numpy().tolist())))
+    missing_atom = np.arange(iinput['n_atom'])[np.array(iinput['atom'] == 1).squeeze()]
     is_outlier = bool((missing_bond.size != 0) | (missing_atom.size != 0))
 
     return not is_outlier
 
 
-def inputs_to_dataframe(smiles, inputs):
-    molecule = np.repeat(np.array(smiles), np.stack([iinput['n_bond'] for iinput in inputs]))
-    bond_index = np.concatenate([iinput['bond_indices'] for iinput in inputs])
-    input_df = pd.DataFrame(np.vstack([molecule, bond_index]).T,
-                            columns=['molecule', 'bond_index'])
-    input_df['bond_index'] = input_df.bond_index.astype('int64')
-
-    return input_df
-
-
-def predict(smiles_list, batch_size=128, drop_duplicates=True, verbose=True,
-            n_jobs=-1):
+def predict(smiles_list, drop_duplicates=True, verbose=True):
     """Predict the BDEs of each bond in a list of molecules.
 
     Parameters
     ----------
     smiles_list : list
         List of SMILES strings for each molecule
-    batch_size : int, optional
-        Batch size of molecules (when running on a GPU)
     drop_duplicates : bool, optional
         Whether to drop duplicate bonds (those with the same resulting radicals)
     verbose : bool, optional
         Whether to show a progress bar
-    n_jobs : int, optional
-        jobs parameter for joblib. Default to use all cores.
 
     Returns
     -------
@@ -96,35 +70,36 @@ def predict(smiles_list, batch_size=128, drop_duplicates=True, verbose=True,
                    domain of validity
     """
 
-    # Process the smiles list into graph representations
-    inputs = preprocessor.predict(smiles_list, verbose=verbose)
+    frag_df = pd.DataFrame(chain(*(fragment_iterator(smiles)
+                                   for smiles in smiles_list)))
 
-    # Predict the inputs with the neural network
-    pred = model.predict_generator(
-        ConcatGraphSequence(inputs, batch_size=batch_size, shuffle=False),
-        verbose=int(verbose))
+    def prediction_generator(smiles_iterator):
+    
+        dataset = tf.data.Dataset.from_generator(
+            lambda: (preprocessor.construct_feature_matrices(item, train=False)
+                     for item in smiles_iterator),
+            output_types=preprocessor.output_types,
+            output_shapes=preprocessor.output_shapes).batch(1)
+        
+        for molecule, inputs in tqdm(zip(smiles_iterator, dataset), 
+                                     disable=not verbose):
+            out = model.predict_on_batch(inputs)
+            df = pd.DataFrame(out[0, :inputs['n_bond'][0], 0], columns=['BDE'])
+            df['molecule'] = molecule
+            df.index.name = 'bond_index'
+            df.reset_index(inplace=True)
+            
+            df['is_valid'] = check_valid(inputs)
+            
+            yield df
 
-    bde_df = inputs_to_dataframe(smiles_list, inputs)
-    bde_df['bde_pred'] = pred
-    bde_df = bde_df.groupby(['molecule',
-                             'bond_index']).bde_pred.mean().reset_index()
-
-    # Check mols for preprocessor class presence in training data
-    valid_mols = pd.Series([check_valid(iinput) for iinput in inputs],
-                           dtype=bool, index=smiles_list, name='is_valid')
-    bde_df = bde_df.merge(valid_mols, left_on='molecule', right_index=True,
-                          how='left')
-
-    # Seperately fragment the molecules to find their valid bonds
-    frag_results = Parallel(n_jobs=n_jobs, verbose=10 if verbose else 0)(
-        delayed(get_fragments)(smiles) for smiles in smiles_list)
-    frag_df = pd.concat(frag_results)
+    bde_df = pd.concat(prediction_generator(smiles_list))
 
     pred_df = frag_df.merge(bde_df, on=['molecule', 'bond_index'],
                             how='left')
 
     if drop_duplicates:
         pred_df = pred_df.drop_duplicates([
-            'fragment1', 'fragment2']).reset_index()
+            'fragment1', 'fragment2']).reset_index(drop=True)
 
-    return pred_df.drop('index', 1)
+    return pred_df

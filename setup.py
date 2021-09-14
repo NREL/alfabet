@@ -13,7 +13,7 @@ with open(path.join(here, 'README.md'), encoding='utf-8') as f:
 
 setup(
     name='alfabet',
-    version='0.0.2',
+    version='0.1.0',
     description='A library to estimate bond dissociation energies (BDEs) of organic molecules',
     include_package_data = True,
     long_description=long_description,
@@ -40,7 +40,7 @@ setup(
     ],
 
     packages=find_packages(exclude=['docs', 'tests']),  # Required
-    install_requires=['pandas', 'nfp', 'joblib', 'tqdm'],
+    install_requires=['pandas', 'nfp>=0.1.1', 'tqdm'],
 
     project_urls={
         'Source': 'https://github.com/NREL/alfabet',
