@@ -1,2 +1,1 @@
-include alfabet/model_files/best_model.hdf5
-include alfabet/model_files/preprocessor.json
+include alfabet/model_files/*
