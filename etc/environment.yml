@@ -1,0 +1,13 @@
+name: test
+
+channels:
+  - conda-forge
+  - defaults
+
+dependencies:
+  - rdkit
+  - pytest
+  - pandas
+  - tqdm
+  - numpy=1.19.*
+  - tensorflow
