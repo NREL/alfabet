@@ -1,2 +1,3 @@
-include alfabet/model_files/*include versioneer.py
+include alfabet/model_files/*
+include versioneer.py
 include alfabet/_version.py
