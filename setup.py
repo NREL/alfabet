@@ -1,6 +1,9 @@
-from setuptools import setup, find_packages
-from os import path
 from io import open
+from os import path
+
+from setuptools import setup, find_packages
+
+import versioneer
 
 here = path.abspath(path.dirname(__file__))
 
@@ -13,9 +16,10 @@ with open(path.join(here, 'README.md'), encoding='utf-8') as f:
 
 setup(
     name='alfabet',
-    version='0.1.0',
+    version=versioneer.get_version(),
+    cmdclass=versioneer.get_cmdclass(),
     description='A library to estimate bond dissociation energies (BDEs) of organic molecules',
-    include_package_data = True,
+    include_package_data=True,
     long_description=long_description,
     long_description_content_type='text/markdown',
     url='https://github.com/NREL/alfabet',  # Optional
