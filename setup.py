@@ -40,7 +40,7 @@ setup(
     ],
 
     packages=find_packages(exclude=['docs', 'tests']),  # Required
-    install_requires=['pandas', 'nfp>=0.1.1', 'tqdm'],
+    install_requires=['pandas', 'nfp==0.1.4', 'tqdm'],
 
     project_urls={
         'Source': 'https://github.com/NREL/alfabet',
