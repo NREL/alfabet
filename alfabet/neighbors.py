@@ -1,16 +1,17 @@
-import os
-
 import joblib
+import numpy as np
 import tensorflow as tf
+from pooch import retrieve
 
+from alfabet import _model_files_baseurl
 from alfabet.drawing import draw_bde
 from alfabet.prediction import preprocessor, model, bde_dft
 
-currdir = os.path.dirname(os.path.abspath(__file__))
-embedding_model = tf.keras.Model(model.inputs, [model.layers[17].output])
+embedding_model = tf.keras.Model(model.inputs, [model.layers[31].input])
 
-nbrs_pipe = joblib.load(
-    os.path.join(currdir, 'model_files/20201012_bond_embedding_nbrs.p.z'))
+nbrs_pipe = joblib.load(retrieve(
+    _model_files_baseurl + 'bond_embedding_nbrs.p.z',
+    known_hash='9771cf104a8f6132edc51554d69d256e6f974bcad2c6d8a3e49582dcfaf809b3'))
 
 
 def pipe_kneighbors(pipe, X):
@@ -18,14 +19,9 @@ def pipe_kneighbors(pipe, X):
     return pipe.steps[-1][-1].kneighbors(Xt)
 
 
-def find_neighbor_bonds(smiles, bond_index, draw=True):
-    ds = tf.data.Dataset.from_generator(
-        lambda: (preprocessor.construct_feature_matrices(item, train=False)
-                 for item in (smiles,)),
-        output_types=preprocessor.output_types,
-        output_shapes=preprocessor.output_shapes).batch(batch_size=1)
-
-    embeddings = embedding_model.predict(ds)
+def find_neighbor_bonds(smiles, bond_index, draw=False):
+    inputs = preprocessor.construct_feature_matrices(smiles, train=False)
+    embeddings = embedding_model([tf.constant(np.expand_dims(val, 0), name=val) for key, val in inputs.items()])
     distances, indices = pipe_kneighbors(nbrs_pipe, embeddings[:, bond_index, :])
 
     neighbor_df = bde_dft.dropna().iloc[indices.flatten()]
