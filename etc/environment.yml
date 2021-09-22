@@ -9,5 +9,6 @@ dependencies:
   - pytest
   - pandas
   - tqdm
+  - joblib
   - numpy=1.19.*
   - tensorflow
