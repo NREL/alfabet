@@ -1,5 +1,3 @@
-import os
-
 import joblib
 import numpy as np
 import tensorflow as tf
@@ -9,7 +7,6 @@ from alfabet import _model_files_baseurl
 from alfabet.drawing import draw_bde
 from alfabet.prediction import preprocessor, model, bde_dft
 
-currdir = os.path.dirname(os.path.abspath(__file__))
 embedding_model = tf.keras.Model(model.inputs, [model.layers[31].input])
 
 nbrs_pipe = joblib.load(retrieve(

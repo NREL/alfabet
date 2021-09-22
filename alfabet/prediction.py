@@ -1,11 +1,9 @@
 import os
 
-import nfp
 import numpy as np
 import pandas as pd
 import pooch
 import tensorflow as tf
-import tensorflow_hub as hub
 from pooch import retrieve
 from rdkit import RDLogger
 
@@ -16,18 +14,11 @@ from alfabet.preprocessor import preprocessor
 
 RDLogger.DisableLog('rdApp.*')
 
-currdir = os.path.dirname(os.path.abspath(__file__))
-
-# with warnings.catch_warnings():
-#     warnings.simplefilter('ignore')
-# model = hub.KerasLayer(_model_files_baseurl + 'model.tar.gz')
 model_files = retrieve(_model_files_baseurl + 'model.tar.gz',
-                     known_hash='f1c2b9436f2d18c76b45d95140e6a08c096250bd5f3e2b412492ca27ab38ad0c',
-                     processor=pooch.Untar(extract_dir='model'))
+                       known_hash='f1c2b9436f2d18c76b45d95140e6a08c096250bd5f3e2b412492ca27ab38ad0c',
+                       processor=pooch.Untar(extract_dir='model'))
 
 model = tf.keras.models.load_model(os.path.dirname(model_files[0]))
-
-# model = tf.keras.Model(inputs=model.inputs, outputs=model.outputs)
 
 bde_dft = pd.read_csv(retrieve(
     _model_files_baseurl + 'bonds_for_neighbors.csv.gz',
@@ -58,11 +49,6 @@ def predict_bdes(smiles, draw=False):
     # Break bonds and get corresponding bond indexes where predictions are
     # valid
     frag_df = pd.DataFrame(fragment_iterator(smiles))
-
-    # ds = tf.data.Dataset.from_generator(
-    #     lambda: (
-    #              for item in (smiles,)),
-    #     output_signature=preprocessor.output_signature).batch(batch_size=1)
 
     inputs = preprocessor.construct_feature_matrices(smiles, train=False)
     bde_pred, bdfe_pred = model([tf.constant(np.expand_dims(val, 0), name=val) for key, val in inputs.items()])

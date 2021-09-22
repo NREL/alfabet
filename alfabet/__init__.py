@@ -1,5 +1,5 @@
-
 from . import _version
+
 __version__ = _version.get_versions()['version']
 
 _model_tag = 'v0.1'  # Tag on https://github.com/pstjohn/alfabet-models/
