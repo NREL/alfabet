@@ -44,7 +44,7 @@ setup(
     ],
 
     packages=find_packages(exclude=['docs', 'tests']),  # Required
-    install_requires=['pandas', 'nfp==0.3.3', 'tqdm', 'pooch', 'joblib'],
+    install_requires=['pandas', 'nfp==0.3.3', 'tqdm', 'pooch', 'joblib', 'scikit-learn'],
 
     project_urls={
         'Source': 'https://github.com/NREL/alfabet',
