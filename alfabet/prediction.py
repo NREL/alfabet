@@ -1,66 +1,37 @@
 import os
-import warnings
 
 import nfp
 import numpy as np
 import pandas as pd
+import pooch
 import tensorflow as tf
+import tensorflow_hub as hub
+from pooch import retrieve
 from rdkit import RDLogger
 
+from alfabet import _model_files_baseurl
 from alfabet.drawing import draw_bde
 from alfabet.fragment import fragment_iterator
+from alfabet.preprocessor import preprocessor
 
 RDLogger.DisableLog('rdApp.*')
 
 currdir = os.path.dirname(os.path.abspath(__file__))
 
+# with warnings.catch_warnings():
+#     warnings.simplefilter('ignore')
+# model = hub.KerasLayer(_model_files_baseurl + 'model.tar.gz')
+model_files = retrieve(_model_files_baseurl + 'model.tar.gz',
+                     known_hash='f1c2b9436f2d18c76b45d95140e6a08c096250bd5f3e2b412492ca27ab38ad0c',
+                     processor=pooch.Untar(extract_dir='model'))
 
-def atom_featurizer(atom):
-    """ Return an integer hash representing the atom type
-    """
+model = tf.keras.models.load_model(os.path.dirname(model_files[0]))
 
-    return str((
-        atom.GetSymbol(),
-        atom.GetNumRadicalElectrons(),
-        atom.GetFormalCharge(),
-        atom.GetChiralTag(),
-        atom.GetIsAromatic(),
-        nfp.get_ring_size(atom, max_size=6),
-        atom.GetDegree(),
-        atom.GetTotalNumHs(includeNeighbors=True)
-    ))
+# model = tf.keras.Model(inputs=model.inputs, outputs=model.outputs)
 
-
-def bond_featurizer(bond, flipped=False):
-    if not flipped:
-        atoms = "{}-{}".format(
-            *tuple((bond.GetBeginAtom().GetSymbol(),
-                    bond.GetEndAtom().GetSymbol())))
-    else:
-        atoms = "{}-{}".format(
-            *tuple((bond.GetEndAtom().GetSymbol(),
-                    bond.GetBeginAtom().GetSymbol())))
-
-    btype = str(bond.GetBondType())
-    ring = 'R{}'.format(nfp.get_ring_size(bond, max_size=6)) if bond.IsInRing() else ''
-
-    return " ".join([atoms, btype, ring]).strip()
-
-
-preprocessor = nfp.SmilesPreprocessor(
-    atom_features=atom_featurizer, bond_features=bond_featurizer)
-
-preprocessor.from_json(os.path.join(currdir, 'model_files/preprocessor.json'))
-
-with warnings.catch_warnings():
-    warnings.simplefilter('ignore')
-    model = tf.keras.models.load_model(
-        os.path.join(currdir, 'model_files/best_model.hdf5'),
-        custom_objects=nfp.custom_objects,
-        compile=False)
-
-bde_dft = pd.read_csv(os.path.join(
-    currdir, 'model_files/20201012_bonds_for_neighbors.csv.gz'))
+bde_dft = pd.read_csv(retrieve(
+    _model_files_baseurl + 'bonds_for_neighbors.csv.gz',
+    known_hash='96556a0d05daa2984059b1e1d9e303ea1946f2035f1345288a4698adde54e4e9'))
 
 
 def check_input(smiles):
@@ -76,7 +47,7 @@ def check_input(smiles):
 
     missing_bond = np.array(
         list(set(iinput['bond_indices'][iinput['bond'] == 1])))
-    missing_atom = np.arange(iinput['n_atom'])[iinput['atom'] == 1]
+    missing_atom = np.arange(len(iinput['atom']))[iinput['atom'] == 1]
 
     is_outlier = (missing_bond.size != 0) | (missing_atom.size != 0)
 
@@ -88,18 +59,18 @@ def predict_bdes(smiles, draw=False):
     # valid
     frag_df = pd.DataFrame(fragment_iterator(smiles))
 
-    ds = tf.data.Dataset.from_generator(
-        lambda: (preprocessor.construct_feature_matrices(item, train=False)
-                 for item in (smiles,)),
-        output_types=preprocessor.output_types,
-        output_shapes=preprocessor.output_shapes).batch(batch_size=1)
+    # ds = tf.data.Dataset.from_generator(
+    #     lambda: (
+    #              for item in (smiles,)),
+    #     output_signature=preprocessor.output_signature).batch(batch_size=1)
 
-    bde_pred, bdfe_pred = model.predict(ds)
+    inputs = preprocessor.construct_feature_matrices(smiles, train=False)
+    bde_pred, bdfe_pred = model([tf.constant(np.expand_dims(val, 0), name=val) for key, val in inputs.items()])
 
     # Reindex predictions to fragment dataframe
-    frag_df['bde_pred'] = pd.Series(bde_pred.squeeze()) \
+    frag_df['bde_pred'] = pd.Series(bde_pred.numpy().squeeze()) \
         .reindex(frag_df.bond_index).reset_index(drop=True)
-    frag_df['bdfe_pred'] = pd.Series(bdfe_pred.squeeze()) \
+    frag_df['bdfe_pred'] = pd.Series(bdfe_pred.numpy().squeeze()) \
         .reindex(frag_df.bond_index).reset_index(drop=True)
 
     # Add DFT calculated bdes
