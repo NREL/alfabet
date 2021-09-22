@@ -1,5 +1,7 @@
 import numpy as np
+
 from alfabet import model
+
 
 def test_predict():
     results = model.predict(['CC', 'NCCO', 'CF', 'B'], verbose=False)
@@ -17,3 +19,11 @@ def test_predict():
     np.testing.assert_allclose(
         results[results.molecule == 'NCCO'].bde_pred,
         [90.0, 82.1, 98.2, 99.3, 92.1, 92.5, 105.2], atol=1., rtol=.05)
+
+
+def test_duplicates():
+    results = model.predict(['c1ccccc1'], verbose=False, drop_duplicates=True)
+    assert len(results) == 1
+
+    results = model.predict(['c1ccccc1'], verbose=False, drop_duplicates=False)
+    assert len(results) == 6

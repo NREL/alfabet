@@ -64,8 +64,7 @@ def predict_bdes(smiles, draw=False):
                             on=['molecule', 'bond_index'], how='left')
 
     # Drop duplicate entries and sort from weakest to strongest
-    frag_df = frag_df.sort_values('bde_pred').drop_duplicates(
-        ['fragment1', 'fragment2']).reset_index(drop=True)
+    frag_df = frag_df.sort_values('bde_pred').reset_index(drop=True)
 
     # Draw SVGs
     if draw:
