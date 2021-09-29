@@ -11,5 +11,7 @@ dependencies:
   - tqdm
   - joblib
   - scikit-learn
-  - numpy=1.19.*
-  - tensorflow
+  - numpy
+  - pip
+  - pip:
+    - tensorflow
