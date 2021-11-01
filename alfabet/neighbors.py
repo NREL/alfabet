@@ -21,7 +21,7 @@ def pipe_kneighbors(pipe, X):
 
 def find_neighbor_bonds(smiles, bond_index, draw=False):
     inputs = preprocessor.construct_feature_matrices(smiles, train=False)
-    embeddings = embedding_model([tf.constant(np.expand_dims(val, 0), name=val) for key, val in inputs.items()])
+    embeddings = embedding_model({key: tf.constant(np.expand_dims(val, 0), name=val) for key, val in inputs.items()})
     distances, indices = pipe_kneighbors(nbrs_pipe, embeddings[:, bond_index, :])
 
     neighbor_df = bde_dft.dropna().iloc[indices.flatten()]

@@ -51,7 +51,7 @@ def predict_bdes(smiles, draw=False):
     frag_df = pd.DataFrame(fragment_iterator(smiles))
 
     inputs = preprocessor.construct_feature_matrices(smiles, train=False)
-    bde_pred, bdfe_pred = model([tf.constant(np.expand_dims(val, 0), name=val) for key, val in inputs.items()])
+    bde_pred, bdfe_pred = model({key: tf.constant(np.expand_dims(val, 0), name=val) for key, val in inputs.items()})
 
     # Reindex predictions to fragment dataframe
     frag_df['bde_pred'] = pd.Series(bde_pred.numpy().squeeze()) \
