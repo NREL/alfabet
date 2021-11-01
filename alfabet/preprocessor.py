@@ -1,4 +1,5 @@
 import nfp
+from nfp.preprocessing.features import get_ring_size
 from pooch import retrieve
 
 from alfabet import _model_files_baseurl
@@ -14,7 +15,7 @@ def atom_featurizer(atom):
         atom.GetFormalCharge(),
         atom.GetChiralTag(),
         atom.GetIsAromatic(),
-        nfp.get_ring_size(atom, max_size=6),
+        get_ring_size(atom, max_size=6),
         atom.GetDegree(),
         atom.GetTotalNumHs(includeNeighbors=True)
     ))
@@ -32,16 +33,15 @@ def bond_featurizer(bond, flipped=False):
 
     btype = str((bond.GetBondType(),
                  bond.GetIsConjugated()))
-    ring = 'R{}'.format(nfp.get_ring_size(bond, max_size=6)) if bond.IsInRing() else ''
+    ring = 'R{}'.format(get_ring_size(bond, max_size=6)) if bond.IsInRing() else ''
 
     return " ".join([atoms, btype, ring]).strip()
 
 
-preprocessor = nfp.SmilesPreprocessor(
+preprocessor = nfp.SmilesBondIndexPreprocessor(
     atom_features=atom_featurizer,
     bond_features=bond_featurizer,
     explicit_hs=True,
-    bond_indices=True,
     output_dtype='int64'
 )
 
