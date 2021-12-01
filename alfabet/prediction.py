@@ -15,14 +15,14 @@ from alfabet.preprocessor import preprocessor
 RDLogger.DisableLog('rdApp.*')
 
 model_files = retrieve(_model_files_baseurl + 'model.tar.gz',
-                       known_hash='f1c2b9436f2d18c76b45d95140e6a08c096250bd5f3e2b412492ca27ab38ad0c',
+                       known_hash='sha256:f1c2b9436f2d18c76b45d95140e6a08c096250bd5f3e2b412492ca27ab38ad0c',
                        processor=pooch.Untar(extract_dir='model'))
 
 model = tf.keras.models.load_model(os.path.dirname(model_files[0]))
 
 bde_dft = pd.read_csv(retrieve(
     _model_files_baseurl + 'bonds_for_neighbors.csv.gz',
-    known_hash='96556a0d05daa2984059b1e1d9e303ea1946f2035f1345288a4698adde54e4e9'))
+    known_hash='sha256:d4fb825c42d790d4b2b4bd5dc2d87c844932e2da82992a31d7521ce51395adb1'))
 
 
 def check_input(smiles):
