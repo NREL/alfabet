@@ -11,7 +11,7 @@ embedding_model = tf.keras.Model(model.inputs, [model.layers[31].input])
 
 nbrs_pipe = joblib.load(retrieve(
     _model_files_baseurl + 'bond_embedding_nbrs.p.z',
-    known_hash='9771cf104a8f6132edc51554d69d256e6f974bcad2c6d8a3e49582dcfaf809b3'))
+    known_hash='sha256:187df1e88a5fafc1e83436f86ea0374df678e856f2c17506bc730de1996a47b1'))
 
 
 def pipe_kneighbors(pipe, X):
