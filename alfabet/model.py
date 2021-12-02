@@ -1,9 +1,11 @@
 import pandas as pd
 
-from alfabet.prediction import predict_bdes, check_input
+from alfabet.fragment import get_fragments
+from alfabet.prediction import predict_bdes, validate_inputs
+from alfabet.preprocessor import get_features
 
 
-def predict(smiles_list, drop_duplicates=True, verbose=True):
+def predict(smiles_list, drop_duplicates=True):
     """Predict the BDEs of each bond in a list of molecules.
 
     Parameters
@@ -33,12 +35,19 @@ def predict(smiles_list, drop_duplicates=True, verbose=True):
                    domain of validity
     """
 
-    is_valid = pd.Series({smiles: not check_input(smiles)[0] for smiles in smiles_list}, name='is_valid')
-    pred_df = pd.concat([predict_bdes(smiles, draw=False) for smiles in smiles_list])
-    pred_df = pred_df.merge(is_valid, left_on='molecule', right_index=True)
+    inputs = {smiles: get_features(smiles) for smiles in smiles_list}
+    fragments = {smiles: get_fragments(smiles) for smiles in smiles_list}
 
-    if drop_duplicates:
-        pred_df = pred_df.drop_duplicates([
-            'fragment1', 'fragment2']).reset_index(drop=True)
+    pred_df = pd.concat([
+        predict_bdes(fragments[smiles],
+                     inputs[smiles],
+                     draw=False,
+                     drop_duplicates=drop_duplicates)
+        for smiles in smiles_list])
+
+    is_valid = pd.Series({smiles: not validate_inputs(input_)[0] for smiles, input_
+                          in inputs.items()}, name='is_valid')
+
+    pred_df = pred_df.merge(is_valid, left_on='molecule', right_index=True)
 
     return pred_df.sort_values(['molecule', 'bond_index'])
