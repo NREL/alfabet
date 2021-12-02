@@ -5,7 +5,8 @@ from pooch import retrieve
 
 from alfabet import _model_files_baseurl
 from alfabet.drawing import draw_bde
-from alfabet.prediction import preprocessor, model, bde_dft
+from alfabet.prediction import model, bde_dft
+from alfabet.preprocessor import get_features
 
 embedding_model = tf.keras.Model(model.inputs, [model.layers[31].input])
 
@@ -20,7 +21,7 @@ def pipe_kneighbors(pipe, X):
 
 
 def find_neighbor_bonds(smiles, bond_index, draw=False):
-    inputs = preprocessor.construct_feature_matrices(smiles, train=False)
+    inputs = get_features(smiles)
     embeddings = embedding_model({key: tf.constant(np.expand_dims(val, 0), name=val) for key, val in inputs.items()})
     distances, indices = pipe_kneighbors(nbrs_pipe, embeddings[:, bond_index, :])
 
