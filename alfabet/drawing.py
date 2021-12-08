@@ -20,6 +20,9 @@ def draw_bde(smiles, bond_index, figwidth=200):
 
     if bond_index >= mol.GetNumBonds():
         molH = Chem.AddHs(mol)
+        if bond_index >= molH.GetNumBonds():
+            raise RuntimeError(f"Fewer than {bond_index} bonds in {smiles}: "
+                               f"{molH.GetNumBonds()} total bonds")
         bond = molH.GetBondWithIdx(bond_index)
 
         start_atom = mol.GetAtomWithIdx(bond.GetBeginAtomIdx())
