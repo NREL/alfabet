@@ -1,5 +1,6 @@
 import logging
 from collections import Counter
+from typing import Iterator
 
 import pandas as pd
 import rdkit
@@ -7,8 +8,14 @@ import rdkit.Chem
 import rdkit.Chem.AllChem
 
 
-def fragment_iterator(smiles, skip_warnings=False):
-    mol_stereo = enumerate_stereocenters(smiles)
+def get_fragments(smiles: str) -> pd.DataFrame:
+    return pd.DataFrame(fragment_iterator(smiles))
+
+
+def fragment_iterator(smiles: str,
+                      skip_warnings: bool = False
+                      ) -> Iterator[pd.Series]:
+    mol_stereo = count_stereocenters(smiles)
     if ((mol_stereo['atom_unassigned'] != 0) or
             (mol_stereo['bond_unassigned'] != 0)):
         logging.warning(f'Molecule {smiles} has undefined stereochemistry')
@@ -82,13 +89,13 @@ def count_atom_types(smiles):
     return Counter([atom.GetSymbol() for atom in mol.GetAtoms()])
 
 
-def canonicalize_smiles(smiles):
+def canonicalize_smiles(smiles: str) -> str:
     """ Return a consistent SMILES representation for the given molecule """
     mol = rdkit.Chem.MolFromSmiles(smiles)
     return rdkit.Chem.MolToSmiles(mol)
 
 
-def enumerate_stereocenters(smiles):
+def count_stereocenters(smiles: str) -> pd.Series:
     """ Returns a count of both assigned and unassigned stereocenters in the 
     given molecule """
 
@@ -117,7 +124,7 @@ def check_stereocenters(smiles):
     """Check the given SMILES string to determine whether accurate
     enthalpies can be calculated with the given stereochem information
     """
-    stereocenters = enumerate_stereocenters(smiles)
+    stereocenters = count_stereocenters(smiles)
     if stereocenters['bond_unassigned'] > 0:
         return False
 

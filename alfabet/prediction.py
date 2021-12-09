@@ -9,8 +9,6 @@ from rdkit import RDLogger
 
 from alfabet import _model_files_baseurl
 from alfabet.drawing import draw_bde
-from alfabet.fragment import fragment_iterator
-from alfabet.preprocessor import preprocessor
 
 RDLogger.DisableLog('rdApp.*')
 
@@ -25,7 +23,7 @@ bde_dft = pd.read_csv(retrieve(
     known_hash='sha256:d4fb825c42d790d4b2b4bd5dc2d87c844932e2da82992a31d7521ce51395adb1'))
 
 
-def check_input(smiles):
+def validate_inputs(inputs: dict) -> (bool, np.array, np.array):
     """ Check the given SMILES to ensure it's present in the model's
     preprocessor dictionary.
 
@@ -33,24 +31,22 @@ def check_input(smiles):
     (is_outlier, missing_atom, missing_bond)
 
     """
-
-    iinput = preprocessor.construct_feature_matrices(smiles, train=False)
+    inputs = {key: np.asarray(val) for key, val in inputs.items()}
 
     missing_bond = np.array(
-        list(set(iinput['bond_indices'][iinput['bond'] == 1])))
-    missing_atom = np.arange(len(iinput['atom']))[iinput['atom'] == 1]
+        list(set(inputs['bond_indices'][inputs['bond'] == 1])))
+    missing_atom = np.arange(len(inputs['atom']))[inputs['atom'] == 1]
 
     is_outlier = (missing_bond.size != 0) | (missing_atom.size != 0)
 
     return is_outlier, missing_atom, missing_bond
 
 
-def predict_bdes(smiles, draw=False):
+def predict_bdes(frag_df: pd.DataFrame,
+                 inputs: dict,
+                 drop_duplicates: bool = False) -> pd.DataFrame:
     # Break bonds and get corresponding bond indexes where predictions are
     # valid
-    frag_df = pd.DataFrame(fragment_iterator(smiles))
-
-    inputs = preprocessor.construct_feature_matrices(smiles, train=False)
     bde_pred, bdfe_pred = model({key: tf.constant(np.expand_dims(val, 0), name=val) for key, val in inputs.items()})
 
     # Reindex predictions to fragment dataframe
@@ -66,10 +62,9 @@ def predict_bdes(smiles, draw=False):
     # Drop duplicate entries and sort from weakest to strongest
     frag_df = frag_df.sort_values('bde_pred').reset_index(drop=True)
 
-    # Draw SVGs
-    if draw:
-        frag_df['svg'] = frag_df.apply(
-            lambda x: draw_bde(x.molecule, x.bond_index), 1)
+    if drop_duplicates:
+        frag_df = frag_df.drop_duplicates([
+            'fragment1', 'fragment2']).reset_index(drop=True)
 
     frag_df['has_dft_bde'] = frag_df.bde.notna()
 

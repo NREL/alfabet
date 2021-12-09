@@ -48,3 +48,7 @@ preprocessor = nfp.SmilesBondIndexPreprocessor(
 preprocessor.from_json(retrieve(
     _model_files_baseurl + 'preprocessor.json',
     known_hash='412d15ca4d0e8b5030e9b497f566566922818ff355b8ee677a91dd23696878ac'))
+
+
+def get_features(smiles: str) -> dict:
+    return preprocessor(smiles, train=False)

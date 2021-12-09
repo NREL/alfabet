@@ -4,7 +4,7 @@ from alfabet import model
 
 
 def test_predict():
-    results = model.predict(['CC', 'NCCO', 'CF', 'B'], verbose=False)
+    results = model.predict(['CC', 'NCCO', 'CF', 'B'])
 
     assert not results[results.molecule == 'B'].is_valid.any()
     assert results[results.molecule != 'B'].is_valid.all()
@@ -22,8 +22,8 @@ def test_predict():
 
 
 def test_duplicates():
-    results = model.predict(['c1ccccc1'], verbose=False, drop_duplicates=True)
+    results = model.predict(['c1ccccc1'], drop_duplicates=True)
     assert len(results) == 1
 
-    results = model.predict(['c1ccccc1'], verbose=False, drop_duplicates=False)
+    results = model.predict(['c1ccccc1'], drop_duplicates=False)
     assert len(results) == 6

@@ -20,6 +20,9 @@ def draw_bde(smiles, bond_index, figwidth=200):
 
     if bond_index >= mol.GetNumBonds():
         molH = Chem.AddHs(mol)
+        if bond_index >= molH.GetNumBonds():
+            raise RuntimeError(f"Fewer than {bond_index} bonds in {smiles}: "
+                               f"{molH.GetNumBonds()} total bonds")
         bond = molH.GetBondWithIdx(bond_index)
 
         start_atom = mol.GetAtomWithIdx(bond.GetBeginAtomIdx())
@@ -37,9 +40,6 @@ def draw_bde(smiles, bond_index, figwidth=200):
 
     drawer.FinishDrawing()
     svg = drawer.GetDrawingText()
-
-    svg = svg.replace('svg:', '').replace(':svg', '')
-    svg = svg.replace('svg version', f'svg viewBox="0 0 {figwidth} {figwidth}" version')
 
     if flask:
         return Markup(svg)
@@ -75,8 +75,6 @@ def draw_mol_outlier(smiles, missing_atoms, missing_bonds, figsize=(300, 300)):
     drawer.FinishDrawing()
     svg = drawer.GetDrawingText()
 
-    svg = svg.replace('svg:', '').replace(':svg', '')
-
     if flask:
         return Markup(svg)
     else:
@@ -93,8 +91,6 @@ def draw_mol(smiles, figsize=(300, 300)):
 
     drawer.FinishDrawing()
     svg = drawer.GetDrawingText()
-
-    svg = svg.replace('svg:', '').replace(':svg', '')
 
     if flask:
         return Markup(svg)
