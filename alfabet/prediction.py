@@ -44,7 +44,6 @@ def validate_inputs(inputs: dict) -> (bool, np.array, np.array):
 
 def predict_bdes(frag_df: pd.DataFrame,
                  inputs: dict,
-                 draw: bool = False,
                  drop_duplicates: bool = False) -> pd.DataFrame:
     # Break bonds and get corresponding bond indexes where predictions are
     # valid
@@ -66,11 +65,6 @@ def predict_bdes(frag_df: pd.DataFrame,
     if drop_duplicates:
         frag_df = frag_df.drop_duplicates([
             'fragment1', 'fragment2']).reset_index(drop=True)
-
-    # Draw SVGs
-    if draw:
-        frag_df['svg'] = frag_df.apply(
-            lambda x: draw_bde(x.molecule, x.bond_index), 1)
 
     frag_df['has_dft_bde'] = frag_df.bde.notna()
 

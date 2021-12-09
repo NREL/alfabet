@@ -41,7 +41,6 @@ def predict(smiles_list, drop_duplicates=True):
     pred_df = pd.concat([
         predict_bdes(fragments[smiles],
                      inputs[smiles],
-                     draw=False,
                      drop_duplicates=drop_duplicates)
         for smiles in smiles_list])
 
