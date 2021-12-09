@@ -1,11 +1,22 @@
 import pandas as pd
+import rdkit.Chem
+import tensorflow as tf
 
 from alfabet.fragment import get_fragments
-from alfabet.prediction import predict_bdes, validate_inputs
-from alfabet.preprocessor import get_features
+from alfabet.prediction import model, validate_inputs, bde_dft
+from alfabet.preprocessor import get_features, preprocessor
 
 
-def predict(smiles_list, drop_duplicates=True):
+def get_max_bonds(smiles_list):
+    def num_bonds(smiles):
+        mol = rdkit.Chem.MolFromSmiles(smiles)
+        molH = rdkit.Chem.AddHs(mol)
+        return molH.GetNumBonds()
+
+    return max((num_bonds(smiles) for smiles in smiles_list))
+
+
+def predict(smiles_list, drop_duplicates=True, batch_size=1):
     """Predict the BDEs of each bond in a list of molecules.
 
     Parameters
@@ -35,18 +46,35 @@ def predict(smiles_list, drop_duplicates=True):
                    domain of validity
     """
 
-    inputs = {smiles: get_features(smiles) for smiles in smiles_list}
-    fragments = {smiles: get_fragments(smiles) for smiles in smiles_list}
+    pred_df = pd.concat((get_fragments(smiles) for smiles in smiles_list))
+    if drop_duplicates:
+        pred_df = pred_df.drop_duplicates(['fragment1', 'fragment2']).reset_index(drop=True)
 
-    pred_df = pd.concat([
-        predict_bdes(fragments[smiles],
-                     inputs[smiles],
-                     drop_duplicates=drop_duplicates)
-        for smiles in smiles_list])
+    input_dataset = tf.data.Dataset.from_generator(
+        lambda: (get_features(smiles, max_num_edges=2 * get_max_bonds(smiles_list))
+                 for smiles in smiles_list),
+        output_signature=preprocessor.output_signature) \
+        .cache()
+
+    batched_dataset = input_dataset \
+        .padded_batch(batch_size=batch_size) \
+        .prefetch(tf.data.experimental.AUTOTUNE)
+
+    bdes, bdfes = model.predict(batched_dataset)
+
+    bde_df = pd.DataFrame(bdes.squeeze(axis=-1), index=smiles_list) \
+        .T.unstack().reindex(pred_df[['molecule', 'bond_index']])
+    bdfe_df = pd.DataFrame(bdfes.squeeze(axis=-1), index=smiles_list) \
+        .T.unstack().reindex(pred_df[['molecule', 'bond_index']])
+
+    pred_df['bde_pred'] = bde_df.values
+    pred_df['bdfe_pred'] = bdfe_df.values
 
     is_valid = pd.Series({smiles: not validate_inputs(input_)[0] for smiles, input_
-                          in inputs.items()}, name='is_valid')
+                          in zip(smiles_list, input_dataset)}, name='is_valid')
 
     pred_df = pred_df.merge(is_valid, left_on='molecule', right_index=True)
+    pred_df = pred_df.merge(bde_dft[['molecule', 'bond_index', 'bde', 'bdfe', 'set']],
+                            on=['molecule', 'bond_index'], how='left')
 
-    return pred_df.sort_values(['molecule', 'bond_index'])
+    return pred_df

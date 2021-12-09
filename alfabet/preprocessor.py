@@ -50,5 +50,5 @@ preprocessor.from_json(retrieve(
     known_hash='412d15ca4d0e8b5030e9b497f566566922818ff355b8ee677a91dd23696878ac'))
 
 
-def get_features(smiles: str) -> dict:
-    return preprocessor(smiles, train=False)
+def get_features(smiles: str, **kwargs) -> dict:
+    return preprocessor(smiles, train=False, **kwargs)
