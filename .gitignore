@@ -107,5 +107,6 @@ venv.bak/
 *.sw[op]
 Untitled*
 
-#Pycharm
+#Editors
 .idea/
+.vscode/
