@@ -1,6 +1,6 @@
 import pandas as pd
 import rdkit.Chem
-import tensorflow as tf
+from nfp.frameworks import tf
 
 from alfabet.fragment import get_fragments
 from alfabet.prediction import bde_dft, model, validate_inputs
