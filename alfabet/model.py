@@ -64,7 +64,9 @@ def predict(smiles_list, drop_duplicates=True, batch_size=1):
         tf.data.experimental.AUTOTUNE
     )
 
-    bdes, bdfes = model.predict(batched_dataset)
+    results = model.predict(batched_dataset)
+    bdes = results[:, 0]
+    bdfes = results[:, 1]
 
     bde_df = (
         pd.DataFrame(bdes.squeeze(axis=-1), index=smiles_list)
