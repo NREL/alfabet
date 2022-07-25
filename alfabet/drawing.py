@@ -21,8 +21,10 @@ def draw_bde(smiles, bond_index, figwidth=200):
     if bond_index >= mol.GetNumBonds():
         molH = Chem.AddHs(mol)
         if bond_index >= molH.GetNumBonds():
-            raise RuntimeError(f"Fewer than {bond_index} bonds in {smiles}: "
-                               f"{molH.GetNumBonds()} total bonds")
+            raise RuntimeError(
+                f"Fewer than {bond_index} bonds in {smiles}: "
+                f"{molH.GetNumBonds()} total bonds"
+            )
         bond = molH.GetBondWithIdx(bond_index)
 
         start_atom = mol.GetAtomWithIdx(bond.GetBeginAtomIdx())
@@ -36,7 +38,13 @@ def draw_bde(smiles, bond_index, figwidth=200):
     drawer.drawOptions().fixedBondLength = 30
     drawer.drawOptions().highlightBondWidthMultiplier = 20
 
-    drawer.DrawMolecule(mol, highlightAtoms=[], highlightBonds=[bond_index, ])
+    drawer.DrawMolecule(
+        mol,
+        highlightAtoms=[],
+        highlightBonds=[
+            bond_index,
+        ],
+    )
 
     drawer.FinishDrawing()
     svg = drawer.GetDrawingText()
@@ -66,11 +74,12 @@ def draw_mol_outlier(smiles, missing_atoms, missing_bonds, figsize=(300, 300)):
         rdDepictor.Compute2DCoords(mol)
 
     drawer = rdMolDraw2D.MolDraw2DSVG(*figsize)
-    drawer.SetFontSize(.6)
+    drawer.SetFontSize(0.6)
     drawer.DrawMolecule(
         mol,
         highlightAtoms=[int(index) for index in missing_atoms],
-        highlightBonds=missing_bonds_adjusted)
+        highlightBonds=missing_bonds_adjusted,
+    )
 
     drawer.FinishDrawing()
     svg = drawer.GetDrawingText()
@@ -86,7 +95,7 @@ def draw_mol(smiles, figsize=(300, 300)):
     rdDepictor.Compute2DCoords(mol)
 
     drawer = rdMolDraw2D.MolDraw2DSVG(*figsize)
-    drawer.SetFontSize(.6)
+    drawer.SetFontSize(0.6)
     drawer.DrawMolecule(mol)
 
     drawer.FinishDrawing()
