@@ -3,11 +3,14 @@ import numpy as np
 from nfp.preprocessing.features import get_ring_size
 from pooch import retrieve
 
-from alfabet import _model_files_baseurl
-
+from alfabet import MODEL_CONFIG
 
 def atom_featurizer(atom):
-    """Return an integer hash representing the atom type"""
+    """ 
+        Return a merged string representation of atom features. This would be useful 
+        to store the simple representation of an atom into a word dictionary for
+        the Embedding layer in Keras/Tensorflow.
+    """
 
     return str(
         (
@@ -23,15 +26,17 @@ def atom_featurizer(atom):
     )
 
 
-def bond_featurizer(bond, flipped=False):
+def bond_featurizer(bond, flipped: bool = False) -> str:
+    """ 
+        Return a merged string representation of bond features. This would be useful 
+        to store the simple representation of an bond into a word dictionary for
+        the Embedding layer in Keras/Tensorflow.
+    """
     if not flipped:
-        atoms = "{}-{}".format(
-            *tuple((bond.GetBeginAtom().GetSymbol(), bond.GetEndAtom().GetSymbol()))
-        )
+        atoms = [bond.GetBeginAtom().GetSymbol(), bond.GetEndAtom().GetSymbol()]
     else:
-        atoms = "{}-{}".format(
-            *tuple((bond.GetEndAtom().GetSymbol(), bond.GetBeginAtom().GetSymbol()))
-        )
+        atoms = [bond.GetEndAtom().GetSymbol(), bond.GetBeginAtom().GetSymbol()]
+    atoms = f'{atoms[0]}-{atoms[1]}'
 
     btype = str((bond.GetBondType(), bond.GetIsConjugated()))
     ring = "R{}".format(get_ring_size(bond, max_size=6)) if bond.IsInRing() else ""
@@ -43,12 +48,13 @@ preprocessor = nfp.SmilesBondIndexPreprocessor(
     atom_features=atom_featurizer,
     bond_features=bond_featurizer,
     explicit_hs=True,
-    output_dtype="int64",
+    # Would it better to be 'uint32' for better memory usage on x32 CPU ?
+    output_dtype="int64",                       
 )
 
 preprocessor.from_json(
     retrieve(
-        _model_files_baseurl + "preprocessor.json",
+        MODEL_CONFIG['base_url'] + MODEL_CONFIG['preprocessor_name'],
         known_hash="412d15ca4d0e8b5030e9b497f566566922818ff355b8ee677a91dd23696878ac",
     )
 )
@@ -56,19 +62,19 @@ preprocessor.from_json(
 
 def get_features(smiles: str, pad: bool = False, **kwargs) -> dict:
     """
-        Run the preprocessor on the given SMILES string.
+        Run the pre-processor on the given SMILES string.
         
+        Arguments:
+        ----------
+            - smiles (bool): The input molecule.
+            - pad (bool): Optional. Whether to left-pad the input with zeros in preparation 
+                for tf-serving's padding behavior. Defaults to False.
 
-    Args:
-        smiles (str): the input molecule
-        pad (bool, optional): whether to left-pad the inputs with zeros in preparation
-            for tf-serving's padding behavior. Defaults to False.
-
-    Returns:
-        dict: numpy array inputs with atom, bond, connectivity, and bond_indicies.
+        Returns:
+        ----------
+            - A numpy array inputs with atom, bond, connectivity, and bond_indicies.
     """
     features = preprocessor(smiles, train=False, **kwargs)
-
     if not pad:
         return features
 

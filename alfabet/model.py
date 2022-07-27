@@ -1,15 +1,11 @@
 from typing import List
 import pandas as pd
-import rdkit.Chem
 from nfp.frameworks import tf
 
 from rdkit.Chem.rdmolfiles import MolFromSmiles
-from rdkit.Chem.rdmolops import AddHs, RemoveHs
+from rdkit.Chem.rdmolops import AddHs
 
 from alfabet.utils import MolProcessor
-
-
-from alfabet.fragment import get_fragments
 from alfabet.prediction import bde_dft, model, validate_inputs
 from alfabet.preprocessor import get_features, preprocessor
 
@@ -87,12 +83,12 @@ def predict(smiles_list: List[str], drop_duplicates: bool = True,
     
     bde_df = (
         pd.DataFrame(bdes.squeeze(axis=-1), index=smiles_list)
-        .T.unstack().reindex(base_df[[label[0], label[3]]])
+        .T.unstack().reindex(base_df[t_label])
     )
 
     bdfe_df = (
         pd.DataFrame(bdfes.squeeze(axis=-1), index=smiles_list)
-        .T.unstack().reindex(base_df[[label[0], label[3]]])
+        .T.unstack().reindex(base_df[t_label])
     )
 
     base_df["bde_pred"] = bde_df.values
@@ -128,10 +124,6 @@ def predict(smiles_list: List[str], drop_duplicates: bool = True,
     )
 
     base_df = base_df.merge(is_valid, left_on="molecule", right_index=True)
-    base_df = base_df.merge(
-        bde_df[["molecule", "bond_index", "bde", "bdfe", "set"]],
-        on=["molecule", "bond_index"],
-        how="left",
-    )
-
+    base_df = base_df.merge(bde_dft[["molecule", "bond_index", "bde", "bdfe", "set"]],
+                            on=t_label, how="left")
     return base_df

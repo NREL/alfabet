@@ -6,14 +6,12 @@ import pandas as pd
 import pooch
 from nfp.frameworks import tf
 from pooch import retrieve
-from rdkit import RDLogger
 
-from alfabet import _model_files_baseurl
+from alfabet import MODEL_CONFIG
 
-RDLogger.DisableLog("rdApp.*")
 
 model_files = retrieve(
-    _model_files_baseurl + "model.tar.gz",
+    MODEL_CONFIG["base_url"] + MODEL_CONFIG["model_name"],
     known_hash="sha256:f1c2b9436f2d18c76b45d95140e6"
     "a08c096250bd5f3e2b412492ca27ab38ad0c",
     processor=pooch.Untar(extract_dir="model"),
@@ -23,7 +21,7 @@ model = tf.keras.models.load_model(os.path.dirname(model_files[0]))
 
 bde_dft = pd.read_csv(
     retrieve(
-        _model_files_baseurl + "bonds_for_neighbors.csv.gz",
+        MODEL_CONFIG['base_url'] + MODEL_CONFIG['bde_dft_dataset_name'],
         known_hash="sha256:d4fb825c42d790d4b2b4bd5dc2d"
         "87c844932e2da82992a31d7521ce51395adb1",
     )
@@ -31,12 +29,15 @@ bde_dft = pd.read_csv(
 
 
 def validate_inputs(inputs: dict) -> Tuple[bool, np.array, np.array]:
-    """Check the given SMILES to ensure it's present in the model's
-    preprocessor dictionary.
+    """
+        Check the given SMILES to ensure it's present in the model's
+        preprocessor dictionary.
 
-    Returns:
-    (is_outlier, missing_atom, missing_bond)
-
+        Returns:
+        --------
+            - Do we have any outliers ?
+            - The missing atom that are not available in the dictionary.
+            - The missing bond that are not available in the dictionary.
     """
     inputs = {key: np.asarray(val) for key, val in inputs.items()}
 

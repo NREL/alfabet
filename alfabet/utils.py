@@ -96,6 +96,7 @@ class MolProcessor:
         
         """
             This method is to get all bonds inside molecule (in SMILES form) into a series of bonds.
+            
             Arguments:
             ----------
                 - ToDict (bool): If True, return a dictionary.
@@ -124,6 +125,11 @@ class MolProcessor:
         smiles: str = self.ToSmiles()
         reactions: List[List] = []
         
+        MolStereo = CountStereoCenters(self.mol, legacy=True)
+        if MolStereo["atom_unassigned"] != 0 or MolStereo["bond_unassigned"] != 0:
+            warning(f"Molecule {smiles} has undefined stereochemistry.")
+
+
         for bond in mol.GetBonds():
             StartAtom = bond.GetBeginAtom()
             EndAtom = bond.GetEndAtom()
