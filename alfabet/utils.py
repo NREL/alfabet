@@ -82,7 +82,7 @@ def CountStereoCenters(mol: Mol, legacy: bool = True) -> bool:
 class MolProcessor:
     # __slots__ = ('mol', )                     # For future Python (current minimal is 3.6 ?)          
     
-    def __init__(self, mol: Union[Mol, str]) -> None:
+    def __init__(self, mol: Union[Mol, str] = None) -> None:
         if isinstance(mol, str):
             mol = SmilesToMol(mol)
         self.mol: Mol = mol

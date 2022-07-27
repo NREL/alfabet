@@ -65,7 +65,7 @@ def predict(smiles_list: List[str], drop_duplicates: bool = True,
     bdes, bdfes = model.predict(batched_dataset)
 
     # [2]: Calculating all valid reactions / fragments of all SMILES found
-    RDMolProcessor: MolProcessor = MolProcessor()
+    RDMolProcessor: MolProcessor = MolProcessor(None)
     reactions = []
     for smiles in smiles_list:
         RDMolProcessor.AddMol(mol=smiles, Hs=True)
