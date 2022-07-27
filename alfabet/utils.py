@@ -86,6 +86,7 @@ class MolProcessor:
         if isinstance(mol, str):
             mol = SmilesToMol(mol)
         self.mol: Mol = mol
+        self._col = ['molecule', 'fragment1', 'fragment2', 'bond_index', 'bond_type', 'is_valid_stereo']
     
     # -------------------------------------------------------------------------
     def GetReactions(self, ToDict: bool, ReverseReaction: bool = False, SingleBondOnly: bool = True, 
@@ -169,7 +170,7 @@ class MolProcessor:
             else:
                 Smi2A, Smi2B = 'NONE', 'NONE'
                 valid: bool = False
-                warning(f' Found invalid bond at index {bond.GetIdx()}.')
+                warning(f' Found invalid bond at index {bond.GetIdx()} of mol {smiles}.')
 
             reactions.append([smiles, Smi2A, Smi2B, bond.GetIdx(), bondType, valid])
             if ReverseReaction:
@@ -199,13 +200,13 @@ class MolProcessor:
         
         if ToDict:
             result = defaultdict(list)
-            result['mol'] = smiles
+            result[self._col[0]] = smiles
             for _, r1, r2, bIdx, bType, stereo in reactions:
-                result['fragment1'].append(r1)
-                result['fragment2'].append(r2)
-                result['bond_index'].append(bIdx)
-                result['bond_type'].append(bType)
-                result['is_valid_stereo'].append(stereo)
+                result[self._col[1]].append(r1)
+                result[self._col[2]].append(r2)
+                result[self._col[3]].append(bIdx)
+                result[self._col[4]].append(bType)
+                result[self._col[5]].append(stereo)
             return result
                 
         return reactions
@@ -294,7 +295,7 @@ class MolProcessor:
             warning(' A molecule is already stored, calling this method would overwrite it.')
         
         if isinstance(mol, str):
-            mol = SmilesToMol(mol)          
+            mol = SmilesToMol(mol, Hs=Hs, *args, **kwargs)          
         self.mol = mol
     
     def ClearComputedProps(self) -> None:
@@ -306,17 +307,20 @@ class MolProcessor:
         self.IsMolStored(skip_warning=False)
         return self.mol
     
-    def ToSmiles(self) -> str:
-        return MolToSmiles(self.mol)
+    def ToSmiles(self, keepPossibleHs: bool = False) -> str:
+        return MolToSmiles(self.mol) if keepPossibleHs else MolToSmiles(RemoveHs(self.mol))
     
     def CanonSmiles(self, useChiral: bool) -> str:
         if self.mol is None:
             raise ValueError("No molecule is stored.")
         return CanonSmiles(self.mol, useChiral=useChiral)
     
-    def ClearMol(self):
+    def ClearMol(self) -> None:
         self.mol = None
     
+    def GetLabel(self) -> List[str]:
+        return self._col
+
     def IsMolStored(self, skip_warning: bool = False) -> bool:
         if not skip_warning and self.mol is None:
             warning(" No molecule is stored.")

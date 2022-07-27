@@ -1,22 +1,28 @@
+from typing import List
 import pandas as pd
 import rdkit.Chem
 from nfp.frameworks import tf
+
+from rdkit.Chem.rdmolfiles import MolFromSmiles
+from rdkit.Chem.rdmolops import AddHs, RemoveHs
+
+from alfabet.utils import MolProcessor
+
 
 from alfabet.fragment import get_fragments
 from alfabet.prediction import bde_dft, model, validate_inputs
 from alfabet.preprocessor import get_features, preprocessor
 
-
-def get_max_bonds(smiles_list):
-    def num_bonds(smiles):
-        mol = rdkit.Chem.MolFromSmiles(smiles)
-        molH = rdkit.Chem.AddHs(mol)
-        return molH.GetNumBonds()
-
-    return max((num_bonds(smiles) for smiles in smiles_list))
+def NumBonds(smiles: str) -> int:
+    return AddHs(MolFromSmiles(smiles)).GetNumBonds()
 
 
-def predict(smiles_list, drop_duplicates=True, batch_size=1):
+def GetMaxBonds(smiles_list: List[str]) -> int:
+    return max(NumBonds(smiles) for smiles in smiles_list)
+
+
+def predict(smiles_list: List[str], drop_duplicates: bool = True, 
+            batch_size: int = 1):
     """Predict the BDEs of each bond in a list of molecules.
 
     Parameters
@@ -46,26 +52,59 @@ def predict(smiles_list, drop_duplicates=True, batch_size=1):
                    domain of validity
     """
 
+    # [1]: Predict BDEs / BDFEs for every bond on all possible SMILES
+    MaxNumBondsFound: int = GetMaxBonds(smiles_list)
+    function = lambda : (
+        get_features(smiles, max_num_edges=2 * MaxNumBondsFound) 
+        for smiles in smiles_list
+    )
+        
+    input_dataset = tf.data.Dataset.from_generator(
+        function, output_signature=preprocessor.output_signature
+        ).cache()
+
+    batched_dataset = input_dataset.padded_batch(batch_size=batch_size)\
+        .prefetch(tf.data.experimental.AUTOTUNE)
+
+    bdes, bdfes = model.predict(batched_dataset)
+
+    # [2]: Calculating all valid reactions / fragments of all SMILES found
+    RDMolProcessor: MolProcessor = MolProcessor()
+    reactions = []
+    for smiles in smiles_list:
+        RDMolProcessor.AddMol(mol=smiles, Hs=True)
+        temp_reaction = RDMolProcessor.GetReactions(
+            ToDict=False, ReverseReaction=False, SingleBondOnly=True, StrictRadical=True, 
+            ZeroDuplicate=drop_duplicates, AroRing=False, NonAroRing=False, 
+            AroRingAttached=True, NonAroRingAttached=True, NonRingAttached=True        
+        )
+        reactions.extend(temp_reaction)
+        RDMolProcessor.ClearMol()
+    
+    label: List[str] = RDMolProcessor.GetLabel()
+    t_label = [label[0], label[3]]              # 'molecule', 'bond_index' 
+    base_df = pd.DataFrame(reactions, index='mol', columns=label)
+    
+    bde_df = (
+        pd.DataFrame(bdes.squeeze(axis=-1), index=smiles_list)
+        .T.unstack().reindex(base_df[[label[0], label[3]]])
+    )
+
+    bdfe_df = (
+        pd.DataFrame(bdfes.squeeze(axis=-1), index=smiles_list)
+        .T.unstack().reindex(base_df[[label[0], label[3]]])
+    )
+
+    base_df["bde_pred"] = bde_df.values
+    base_df["bdfe_pred"] = bdfe_df.values
+
+    """
     pred_df = pd.concat((get_fragments(smiles) for smiles in smiles_list))
     if drop_duplicates:
         pred_df = pred_df.drop_duplicates(["fragment1", "fragment2"]).reset_index(
             drop=True
         )
-
-    input_dataset = tf.data.Dataset.from_generator(
-        lambda: (
-            get_features(smiles, max_num_edges=2 * get_max_bonds(smiles_list))
-            for smiles in smiles_list
-        ),
-        output_signature=preprocessor.output_signature,
-    ).cache()
-
-    batched_dataset = input_dataset.padded_batch(batch_size=batch_size).prefetch(
-        tf.data.experimental.AUTOTUNE
-    )
-
-    bdes, bdfes = model.predict(batched_dataset)
-
+    
     bde_df = (
         pd.DataFrame(bdes.squeeze(axis=-1), index=smiles_list)
         .T.unstack()
@@ -79,7 +118,7 @@ def predict(smiles_list, drop_duplicates=True, batch_size=1):
 
     pred_df["bde_pred"] = bde_df.values
     pred_df["bdfe_pred"] = bdfe_df.values
-
+    """
     is_valid = pd.Series(
         {
             smiles: not validate_inputs(input_)[0]
@@ -88,11 +127,11 @@ def predict(smiles_list, drop_duplicates=True, batch_size=1):
         name="is_valid",
     )
 
-    pred_df = pred_df.merge(is_valid, left_on="molecule", right_index=True)
-    pred_df = pred_df.merge(
-        bde_dft[["molecule", "bond_index", "bde", "bdfe", "set"]],
+    base_df = base_df.merge(is_valid, left_on="molecule", right_index=True)
+    base_df = base_df.merge(
+        bde_df[["molecule", "bond_index", "bde", "bdfe", "set"]],
         on=["molecule", "bond_index"],
         how="left",
     )
 
-    return pred_df
+    return base_df

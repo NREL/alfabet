@@ -55,7 +55,9 @@ preprocessor.from_json(
 
 
 def get_features(smiles: str, pad: bool = False, **kwargs) -> dict:
-    """Run the preprocessor on the given SMILES string
+    """
+        Run the preprocessor on the given SMILES string.
+        
 
     Args:
         smiles (str): the input molecule
