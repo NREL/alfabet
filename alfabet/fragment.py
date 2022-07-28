@@ -193,26 +193,11 @@ class MolProcessor:
                     reactions.append([smiles, smi_2B, smi_2A, bond.GetIdx(), bondType, valid])
 
         if len(reactions) == 0:
-            raise ValueError("No bond is broken or the molecule is not correct.")
+            warning(" No bond is broken or the molecule is not correct.")
+            return reactions
 
         if zero_duplicate:
-            N: int = len(reactions)
-            mask: List[bool] = [False] * N
-            for row in range(0, N):
-                if mask[row]:
-                    continue
-                current_smi = reactions[row][0]
-                smi1, smi2 = reactions[row][1], reactions[row][2]
-                if smi1 == 'NONE' or smi2 == 'NONE':
-                    continue
-                for next_row in range(row + 1, N):
-                    if not mask[next_row] and current_smi == reactions[next_row][0]:
-                        if smi1 == reactions[next_row][1] and smi2 == reactions[next_row][2]:
-                            mask[next_row] = True
-                        if not reverse_reaction and smi1 == reactions[next_row][1] and smi2 == reactions[next_row][2]:
-                            mask[next_row] = True
-            temp = [reactions[idx] for idx in range(N) if not mask[idx]]
-            reactions = temp
+            reactions = MolProcessor._drop_duplicates(reactions, reverse_reaction=reverse_reaction)
 
         if to_dict:
             result = defaultdict(list)
@@ -297,6 +282,24 @@ class MolProcessor:
     @staticmethod
     def get_bond_type(bond) -> str:
         return '{}-{}'.format(*sorted([bond.GetBeginAtom().GetSymbol(), bond.GetEndAtom().GetSymbol()]))
+
+    @staticmethod
+    def _drop_duplicates(reactions: List[List], reverse_reaction: bool = False) -> List[List]:
+        N: int = len(reactions)
+        mask: List[bool] = [False] * N
+        for i in range(0, N):
+            if mask[i]:
+                continue
+            smi1, smi2 = reactions[i][1], reactions[i][2]
+            if smi1 == 'NONE' or smi2 == 'NONE':
+                continue
+            for j in range(i + 1, N):
+                if not mask[j]:
+                    if smi1 == reactions[j][1] and smi2 == reactions[j][2]:
+                        mask[j] = True
+                    elif not reverse_reaction and smi1 == reactions[j][2] and smi2 == reactions[j][1]:
+                        mask[j] = True
+        return [reactions[idx] for idx in range(N) if not mask[idx]]
 
     # -------------------------------------------------------------------------
     def add_mol(self, mol: Union[Mol, str], Hs: bool = True, *args, **kwargs) -> None:
