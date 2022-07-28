@@ -281,6 +281,8 @@ class MolProcessor:
         rw_mol.RemoveBond(start_idx, end_idx)
         if start_atom.GetIsAromatic() or end_atom.GetIsAromatic():
             # Reduce unnecessary kekulization algorithm: O(atoms + bonds)
+            # This applied on both case H-c1cccc1 and c1cccc1-c1ccccc1.
+            # If the broken bond is not adjacent to any aromatic state, kekulization would not be called ?
             Kekulize(rw_mol, clearAromaticFlags=True)
 
         rw_mol.GetAtomWithIdx(start_idx).SetNoImplicit(True)
