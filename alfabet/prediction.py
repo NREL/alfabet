@@ -9,21 +9,20 @@ from pooch import retrieve
 
 from alfabet import MODEL_CONFIG
 
-
 model_files = retrieve(
     MODEL_CONFIG["base_url"] + MODEL_CONFIG["model_name"],
     known_hash="sha256:f1c2b9436f2d18c76b45d95140e6"
-    "a08c096250bd5f3e2b412492ca27ab38ad0c",
+               "a08c096250bd5f3e2b412492ca27ab38ad0c",
     processor=pooch.Untar(extract_dir="model"),
 )
 
-model = tf.keras.models.load_model(os.path.dirname(model_files[0]))
+model = tf.keras.models.load_model(os.path.dirname(model_files[0]), compile=False)
 
 bde_dft = pd.read_csv(
     retrieve(
         MODEL_CONFIG['base_url'] + MODEL_CONFIG['bde_dft_dataset_name'],
         known_hash="sha256:d4fb825c42d790d4b2b4bd5dc2d"
-        "87c844932e2da82992a31d7521ce51395adb1",
+                   "87c844932e2da82992a31d7521ce51395adb1",
     )
 )
 
@@ -68,12 +67,11 @@ def tf_model_forward(inputs: dict) -> Tuple[List[float], List[float]]:
 
 
 def format_predictions_into_dataframe(
-    bde_pred: List[float],
-    bdfe_pred: List[float],
-    frag_df: pd.DataFrame,
-    drop_duplicates: bool = False,
+        bde_pred: List[float],
+        bdfe_pred: List[float],
+        frag_df: pd.DataFrame,
+        drop_duplicates: bool = False,
 ) -> pd.DataFrame:
-
     # Reindex predictions to fragment dataframe
     frag_df["bde_pred"] = (
         pd.Series(bde_pred).reindex(frag_df.bond_index).reset_index(drop=True)

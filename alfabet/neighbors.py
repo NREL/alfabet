@@ -18,6 +18,7 @@ nbrs_pipe = joblib.load(
     )
 )
 
+
 def pipe_kneighbors(pipe, X: np.ndarray):
     Xt = pipe.steps[0][-1].transform(X)
     return pipe.steps[-1][-1].kneighbors(Xt)
@@ -52,6 +53,3 @@ def find_neighbor_bonds(smiles: str, bond_index: int, draw: bool = False) -> pd.
         )
 
     return neighbor_df
-
-
-

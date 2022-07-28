@@ -56,6 +56,7 @@ HANDLERS = {}
 
 def register_vcs_handler(vcs, method):  # decorator
     """Create decorator to mark a method as the handler of a VCS."""
+
     def decorate(f):
         """Store f in HANDLERS[vcs][method]."""
         if vcs not in HANDLERS:
@@ -97,7 +98,7 @@ def run_command(commands,
             return None, None
     else:
         if verbose:
-            print("unable to find command, tried %s" % (commands, ))
+            print("unable to find command, tried %s" % (commands,))
         return None, None
     stdout = process.communicate()[0].strip().decode()
     if process.returncode != 0:

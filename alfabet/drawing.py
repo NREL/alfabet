@@ -3,12 +3,11 @@ try:
     from flask import Markup
 except ImportError:
     flask = None
-    
+
 from rdkit.Chem.Draw import rdMolDraw2D
 from rdkit.Chem.rdDepictor import Compute2DCoords
 from rdkit.Chem.rdmolfiles import MolFromSmiles
 from rdkit.Chem.rdmolops import AddHs
-
 
 
 def draw_bde(smiles: str, bond_index: int, figwidth: int = 200):
@@ -28,7 +27,7 @@ def draw_bde(smiles: str, bond_index: int, figwidth: int = 200):
                 f"Fewer than {bond_index} bonds in {smiles}: "
                 f"{molH.GetNumBonds()} total bonds."
             )
-        
+
         bond = molH.GetBondWithIdx(bond_index)
         mol = AddHs(mol, onlyOnAtoms=[bond.GetBeginAtomIdx()])
         bond_index = mol.GetNumBonds() - 1
@@ -46,11 +45,12 @@ def draw_bde(smiles: str, bond_index: int, figwidth: int = 200):
 
     return Markup(svg) if flask else svg
 
+
 def draw_mol_outlier(smiles, missing_atoms, missing_bonds, figsize=(300, 300)):
     mol = MolFromSmiles(smiles)
     if not isinstance(bond_index, int):
         bond_index = int(bond_index)
-    
+
     missing_bonds_adjusted = []
     for bond_index in missing_bonds:
         if bond_index >= mol.GetNumBonds():
@@ -75,7 +75,6 @@ def draw_mol_outlier(smiles, missing_atoms, missing_bonds, figsize=(300, 300)):
     svg = drawer.GetDrawingText()
 
     return Markup(svg) if flask else svg
-
 
 
 def draw_mol(smiles, figsize=(300, 300)):

@@ -5,6 +5,7 @@ from pooch import retrieve
 
 from alfabet import MODEL_CONFIG
 
+
 def atom_featurizer(atom):
     """ 
         Return a merged string representation of atom features. This would be useful 
@@ -39,7 +40,7 @@ def bond_featurizer(bond, flipped: bool = False) -> str:
     atoms = f'{atoms[0]}-{atoms[1]}'
 
     btype = str((bond.GetBondType(), bond.GetIsConjugated()))
-    ring = "R{}".format(get_ring_size(bond, max_size=6)) if bond.IsInRing() else ""
+    ring = f"R{get_ring_size(bond, max_size=6)}" if bond.IsInRing() else ""
 
     return " ".join([atoms, btype, ring]).strip()
 
@@ -49,7 +50,7 @@ preprocessor = nfp.SmilesBondIndexPreprocessor(
     bond_features=bond_featurizer,
     explicit_hs=True,
     # Would it better to be 'uint32' for better memory usage on x32 CPU ?
-    output_dtype="int64",                       
+    output_dtype="int64",
 )
 
 preprocessor.from_json(
