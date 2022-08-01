@@ -12,7 +12,7 @@ RDLogger.DisableLog("rdApp.*")
 
 
 class Molecule:
-    def __init__(self, /, mol: Type[rdkit.Chem.Mol] = None, smiles: str = None) -> None:
+    def __init__(self, mol: Type[rdkit.Chem.Mol] = None, smiles: str = None) -> None:
         assert (mol is not None) or (
             smiles is not None
         ), "mol or smiles must be provided"
