@@ -63,16 +63,14 @@ def fragment_iterator(smiles: str, skip_warnings: bool = False) -> Iterator[pd.S
             # Check introduction of new stereocenters
             is_valid_stereo = check_stereocenters(frag1) and check_stereocenters(frag2)
 
-            yield pd.Series(
-                {
-                    "molecule": smiles,
-                    "bond_index": bond.GetIdx(),
-                    "bond_type": get_bond_type(bond),
-                    "fragment1": frag1,
-                    "fragment2": frag2,
-                    "is_valid_stereo": is_valid_stereo,
-                }
-            )
+            yield {
+                "molecule": smiles,
+                "bond_index": bond.GetIdx(),
+                "bond_type": get_bond_type(bond),
+                "fragment1": frag1,
+                "fragment2": frag2,
+                "is_valid_stereo": is_valid_stereo,
+            }
 
         except ValueError:
             logging.error(
