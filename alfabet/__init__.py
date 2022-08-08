@@ -1,4 +1,9 @@
+from rdkit import RDLogger
+
 from . import _version
+
+RDLogger.DisableLog("rdApp.*")
+
 
 __version__ = _version.get_versions()["version"]
 

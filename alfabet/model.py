@@ -46,11 +46,12 @@ def predict(smiles_list, drop_duplicates=True, batch_size=1):
                    domain of validity
     """
 
-    pred_df = pd.concat((get_fragments(smiles) for smiles in smiles_list))
-    if drop_duplicates:
-        pred_df = pred_df.drop_duplicates(["fragment1", "fragment2"]).reset_index(
-            drop=True
+    pred_df = pd.concat(
+        (
+            get_fragments(smiles, drop_duplicates=drop_duplicates)
+            for smiles in smiles_list
         )
+    )
 
     input_dataset = tf.data.Dataset.from_generator(
         lambda: (
