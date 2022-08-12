@@ -53,9 +53,10 @@ def predict(smiles_list, drop_duplicates=True, batch_size=1):
         )
     )
 
+    max_bonds = get_max_bonds(smiles_list)
     input_dataset = tf.data.Dataset.from_generator(
         lambda: (
-            get_features(smiles, max_num_edges=2 * get_max_bonds(smiles_list))
+            get_features(smiles, max_num_edges=2 * max_bonds)
             for smiles in smiles_list
         ),
         output_signature=preprocessor.output_signature,
