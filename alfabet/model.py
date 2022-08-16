@@ -1,6 +1,7 @@
 import pandas as pd
 import rdkit.Chem
 from nfp.frameworks import tf
+from tqdm import tqdm
 
 from alfabet.fragment import get_fragments
 from alfabet.prediction import bde_dft, model, validate_inputs
@@ -16,7 +17,7 @@ def get_max_bonds(smiles_list):
     return max((num_bonds(smiles) for smiles in smiles_list))
 
 
-def predict(smiles_list, drop_duplicates=True, batch_size=1):
+def predict(smiles_list, drop_duplicates=True, batch_size=1, verbose=False):
     """Predict the BDEs of each bond in a list of molecules.
 
     Parameters
@@ -49,7 +50,7 @@ def predict(smiles_list, drop_duplicates=True, batch_size=1):
     pred_df = pd.concat(
         (
             get_fragments(smiles, drop_duplicates=drop_duplicates)
-            for smiles in smiles_list
+            for smiles in tqdm(smiles_list, disable=not verbose)
         )
     )
 
@@ -57,7 +58,7 @@ def predict(smiles_list, drop_duplicates=True, batch_size=1):
     input_dataset = tf.data.Dataset.from_generator(
         lambda: (
             get_features(smiles, max_num_edges=2 * max_bonds)
-            for smiles in smiles_list
+            for smiles in tqdm(smiles_list, disable=not verbose)
         ),
         output_signature=preprocessor.output_signature,
     ).cache()
@@ -66,7 +67,7 @@ def predict(smiles_list, drop_duplicates=True, batch_size=1):
         tf.data.experimental.AUTOTUNE
     )
 
-    bdes, bdfes = model.predict(batched_dataset)
+    bdes, bdfes = model.predict(batched_dataset, verbose=1 if verbose else 0)
 
     bde_df = (
         pd.DataFrame(bdes.squeeze(axis=-1), index=smiles_list)
