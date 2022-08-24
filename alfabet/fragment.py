@@ -37,23 +37,28 @@ class Molecule:
     @property
     def smiles(self) -> str:
         if (self._smiles is None) or not self._is_canon:
-            self._smiles = rdkit.Chem.MolToSmiles(self._mol)
+            self._smiles = rdkit.Chem.MolToSmiles(self.mol)
         return self._smiles
 
 
-def get_fragments(smiles: str, drop_duplicates: bool = False) -> pd.DataFrame:
-    df = pd.DataFrame(fragment_iterator(smiles))
+def get_fragments(
+    input_molecule: Molecule, drop_duplicates: bool = False
+) -> pd.DataFrame:
+    df = pd.DataFrame(fragment_iterator(input_molecule))
     if drop_duplicates:
         df = df.drop_duplicates(["fragment1", "fragment2"]).reset_index(drop=True)
     return df
 
 
-def fragment_iterator(smiles: str, skip_warnings: bool = False) -> Iterator[Dict]:
+def fragment_iterator(
+    input_molecule: str, skip_warnings: bool = False
+) -> Iterator[Dict]:
 
-    input_molecule = Molecule(smiles=smiles)
     mol_stereo = count_stereocenters(input_molecule)
     if (mol_stereo["atom_unassigned"] != 0) or (mol_stereo["bond_unassigned"] != 0):
-        logging.warning(f"Molecule {smiles} has undefined stereochemistry")
+        logging.warning(
+            f"Molecule {input_molecule.smiles} has undefined stereochemistry"
+        )
         if skip_warnings:
             return
 
@@ -110,7 +115,9 @@ def fragment_iterator(smiles: str, skip_warnings: bool = False) -> Iterator[Dict
 
         except ValueError:
             logging.error(
-                "Fragmentation error with {}, bond {}".format(smiles, bond.GetIdx())
+                "Fragmentation error with {}, bond {}".format(
+                    input_molecule.smiles, bond.GetIdx()
+                )
             )
             continue
 

@@ -1,20 +1,21 @@
+from typing import List
+
 import pandas as pd
 import rdkit.Chem
 from nfp.frameworks import tf
 from tqdm import tqdm
 
-from alfabet.fragment import get_fragments
+from alfabet.fragment import Molecule, get_fragments
 from alfabet.prediction import bde_dft, model, validate_inputs
 from alfabet.preprocessor import get_features, preprocessor
 
 
-def get_max_bonds(smiles_list):
-    def num_bonds(smiles):
-        mol = rdkit.Chem.MolFromSmiles(smiles)
-        molH = rdkit.Chem.AddHs(mol)
+def get_max_bonds(molecule_list: List[Molecule]):
+    def num_bonds(molecule):
+        molH = rdkit.Chem.AddHs(molecule.mol)
         return molH.GetNumBonds()
 
-    return max((num_bonds(smiles) for smiles in smiles_list))
+    return max((num_bonds(molecule) for molecule in molecule_list))
 
 
 def predict(smiles_list, drop_duplicates=True, batch_size=1, verbose=False):
@@ -47,18 +48,21 @@ def predict(smiles_list, drop_duplicates=True, batch_size=1, verbose=False):
                    domain of validity
     """
 
+    molecule_list = [Molecule(smiles=smiles) for smiles in smiles_list]
+    smiles_list = [mol.smiles for mol in molecule_list]
+
     pred_df = pd.concat(
         (
-            get_fragments(smiles, drop_duplicates=drop_duplicates)
-            for smiles in tqdm(smiles_list, disable=not verbose)
+            get_fragments(mol, drop_duplicates=drop_duplicates)
+            for mol in tqdm(molecule_list, disable=not verbose)
         )
     )
 
-    max_bonds = get_max_bonds(smiles_list)
+    max_bonds = get_max_bonds(molecule_list)
     input_dataset = tf.data.Dataset.from_generator(
         lambda: (
-            get_features(smiles, max_num_edges=2 * max_bonds)
-            for smiles in tqdm(smiles_list, disable=not verbose)
+            get_features(mol.smiles, max_num_edges=2 * max_bonds)
+            for mol in tqdm(molecule_list, disable=not verbose)
         ),
         output_signature=preprocessor.output_signature,
     ).cache()
