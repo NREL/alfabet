@@ -95,7 +95,7 @@ def predict(smiles_list, drop_duplicates=True, batch_size=1, verbose=False):
         name="is_valid",
     )
 
-    pred_df = pred_df.merge(is_valid, left_on="molecule", right_index=True)
+    pred_df = pred_df.merge(is_valid, left_on="molecule", right_index=True, how="left")
     pred_df = pred_df.merge(
         bde_dft[["molecule", "bond_index", "bde", "bdfe", "set"]],
         on=["molecule", "bond_index"],

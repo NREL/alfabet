@@ -1,5 +1,5 @@
 import os
-from typing import List, Tuple
+from typing import Dict, List, Tuple
 
 import numpy as np
 import pandas as pd
@@ -30,7 +30,7 @@ bde_dft = pd.read_csv(
 )
 
 
-def validate_inputs(inputs: dict) -> Tuple[bool, np.array, np.array]:
+def validate_inputs(inputs: Dict) -> Tuple[bool, np.ndarray, np.ndarray]:
     """Check the given SMILES to ensure it's present in the model's
     preprocessor dictionary.
 
@@ -48,7 +48,7 @@ def validate_inputs(inputs: dict) -> Tuple[bool, np.array, np.array]:
     return is_outlier, missing_atom, missing_bond
 
 
-def tf_model_forward(inputs: dict) -> Tuple[List[float], List[float]]:
+def tf_model_forward(inputs: Dict) -> Tuple[List[float], List[float]]:
     """Mimimcs a call to tf-serving by padding the input arrays to resemble a single
     batch and passing them through the loaded tensorflow model
 

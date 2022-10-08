@@ -23,6 +23,11 @@ def test_predict():
     )
 
 
+def test_data_missing():
+    results = model.predict(["CCCCCOC"])
+    assert np.isfinite(results[results.bond_index == 17].bde_pred.iloc[0])
+
+
 def test_duplicates():
     results = model.predict(["c1ccccc1"], drop_duplicates=True)
     assert len(results) == 1
