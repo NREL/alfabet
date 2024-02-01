@@ -46,7 +46,7 @@ setup(
         "tqdm",
         "pooch",
         "joblib",
-        "scikit-learn==0.24.2",
+        "scikit-learn==1.0.1",
     ],
     project_urls={
         "Source": "https://github.com/NREL/alfabet",
