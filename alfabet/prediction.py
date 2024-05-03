@@ -4,7 +4,7 @@ from typing import Dict, List, Tuple
 import numpy as np
 import pandas as pd
 import pooch
-from nfp.frameworks import tf
+import tensorflow as tf
 from pooch import retrieve
 from rdkit import RDLogger
 
